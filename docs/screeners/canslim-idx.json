@@ -1,0 +1,60 @@
+{
+  "id": "canslim-idx",
+  "version": "1.0.0",
+  "name": "CANSLIM (IDX-adapted)",
+  "summary": "Accelerating earnings, price near highs, relative-strength leadership - only while the index is in an uptrend.",
+  "source": {
+    "type": "book",
+    "title": "How to Make Money in Stocks",
+    "author": "William J. O'Neil",
+    "edition": "4th ed.",
+    "locator": "ch. 2-9 (the seven CANSLIM criteria)",
+    "fidelity": "adapted",
+    "adaptations": [
+      "RS Rating replaced by a 6-month total-return percentile within the screening universe.",
+      "Institutional sponsorship proxied by 20-day foreign net flow; degrades to a turnover floor if flow data is unavailable.",
+      "Chart-base pattern recognition is not implemented; distance from the 52-week high is the substitute."
+    ]
+  },
+  "params": {
+    "min_eps_growth_q": { "type": "number", "default": 25, "label": "Min latest-quarter EPS growth YoY (%)" },
+    "min_rs_rank": { "type": "number", "default": 80, "min": 50, "max": 99, "label": "Min relative strength percentile" },
+    "top_n": { "type": "integer", "default": 25, "min": 5, "max": 50 }
+  },
+  "universe": {
+    "exchange": ["IDX"],
+    "boards": ["main", "development"],
+    "exclude_flags": ["special_monitoring", "suspension", "full_call_auction"],
+    "min_avg_daily_value_idr": 5000000000,
+    "min_years_listed": 2,
+    "require_ttm": true
+  },
+  "filters": {
+    "all": [
+      { "metric": "ihsg_above_sma200", "op": "==", "value": 1,
+        "label": "M: IHSG above its 200-day average (market in an uptrend)" },
+      { "metric": "eps_growth_q_yoy", "op": ">=", "value": "{{min_eps_growth_q}}", "label": "C: current quarter EPS growth" },
+      { "metric": "revenue_growth_yoy", "op": ">=", "value": 20, "label": "C: sales growth confirming earnings" },
+      { "metric": "eps_cagr_3y", "op": ">=", "value": 20, "label": "A: 3-year annual EPS growth" },
+      { "history": { "metric": "eps_basic", "op": ">", "value": 0, "periods": 3, "grain": "fy", "quantifier": "all" },
+        "label": "A: profitable in each of the last 3 years" },
+      { "metric": "roe", "op": ">=", "value": 17, "label": "A: ROE at least 17%" },
+      { "metric": "dist_from_52w_high_pct", "op": "<=", "value": 15, "label": "N: within 15% of the 52-week high" },
+      { "metric": "sma50_above_sma200", "op": "==", "value": 1, "label": "N: uptrend structure" },
+      { "metric": "volume_surge_20d", "op": ">=", "value": 1.2, "label": "S: recent volume expansion" },
+      { "metric": "free_float_mcap", "op": ">=", "value": 500000000000, "label": "S: tradable float" },
+      { "cross": { "metric": "return_6m", "op": ">=", "percentile": 0.8, "within": "universe" },
+        "label": "L: relative strength in the top 20% of the universe" },
+      { "metric": "foreign_net_20d", "op": ">", "value": 0, "label": "I: institutional accumulation proxy", "severity": "soft", "weight": 1 }
+    ]
+  },
+  "rank": {
+    "method": "single",
+    "by": [{ "metric": "rs_rank_6m", "dir": "desc" }],
+    "tie_break": [{ "metric": "eps_growth_q_yoy", "dir": "desc" }],
+    "limit": "{{top_n}}"
+  },
+  "explain": true,
+  "min_data_completeness": 0.85,
+  "notes_md": "The M criterion is a gate on the whole screener: below the 200-day average on the IHSG this screener returns nothing, deliberately. O'Neil's rule, and the one most often dropped when it is inconvenient."
+}

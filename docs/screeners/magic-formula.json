@@ -1,0 +1,53 @@
+{
+  "id": "magic-formula",
+  "version": "1.0.0",
+  "name": "Magic Formula",
+  "name_id": "Formula Ajaib",
+  "summary": "Rank the eligible universe on earnings yield (EBIT/EV) and return on capital, then buy the best combined ranks.",
+  "source": {
+    "type": "book",
+    "title": "The Little Book That Still Beats the Market",
+    "author": "Joel Greenblatt",
+    "edition": "2010",
+    "locator": "ch. 6-8 and appendix",
+    "fidelity": "adapted",
+    "adaptations": [
+      "Market-cap floor scaled to IDX liquidity (Rp 1 trillion) instead of the book's USD 50m.",
+      "Liquidity floor of Rp 2bn average daily value added; IDX small caps are frequently untradable in size."
+    ]
+  },
+  "params": {
+    "min_market_cap_idr": { "type": "number", "default": 1000000000000, "label": "Min market cap" },
+    "top_n": { "type": "integer", "default": 30, "min": 10, "max": 100, "label": "Portfolio size" }
+  },
+  "universe": {
+    "exchange": ["IDX"],
+    "boards": ["main", "development"],
+    "exclude_flags": ["special_monitoring", "suspension", "full_call_auction"],
+    "sector_class_exclude": ["bank", "insurance", "multifinance", "utility_regulated"],
+    "min_market_cap_idr": "{{min_market_cap_idr}}",
+    "min_avg_daily_value_idr": 2000000000,
+    "min_years_listed": 2,
+    "require_ttm": true
+  },
+  "filters": {
+    "all": [
+      { "metric": "ebit_ttm", "op": ">", "value": 0, "label": "Positive operating earnings" },
+      { "metric": "enterprise_value", "op": ">", "value": 0, "label": "Positive enterprise value" },
+      { "metric": "roc_greenblatt", "op": ">", "value": 0, "label": "Positive return on capital" }
+    ]
+  },
+  "rank": {
+    "method": "sum_of_ranks",
+    "scope": "pre_filter",
+    "components": [
+      { "metric": "ebit_ev", "dir": "desc" },
+      { "metric": "roc_greenblatt", "dir": "desc" }
+    ],
+    "tie_break": [{ "metric": "market_cap", "dir": "desc" }],
+    "limit": "{{top_n}}"
+  },
+  "explain": true,
+  "min_data_completeness": 0.95,
+  "notes_md": "Greenblatt's method is deliberately mechanical and expects a 20-30 name portfolio held about a year, rebalanced in tranches. The forensic overlay is available but changes the strategy; it is off by default."
+}

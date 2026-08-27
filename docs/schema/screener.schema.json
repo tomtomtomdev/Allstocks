@@ -1,0 +1,213 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://allstocks.local/schema/screener.schema.json",
+  "title": "Allstocks screener definition",
+  "type": "object",
+  "required": ["id", "version", "name", "source", "universe", "filters"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "name": { "type": "string", "minLength": 1 },
+    "name_id": { "type": "string" },
+    "summary": { "type": "string" },
+    "notes_md": { "type": "string" },
+    "explain": { "type": "boolean", "default": true },
+    "min_data_completeness": { "type": "number", "minimum": 0, "maximum": 1, "default": 0.9 },
+    "source": {
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "enum": ["book", "stockbit_preset", "custom"] },
+        "title": { "type": "string" },
+        "author": { "type": "string" },
+        "edition": { "type": "string" },
+        "locator": { "type": "string" },
+        "fidelity": { "enum": ["faithful", "adapted", "inspired"] },
+        "adaptations": { "type": "array", "items": { "type": "string" } },
+        "provider_id": { "type": "string" },
+        "derived_from": { "type": "string" }
+      }
+    },
+    "params": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["type", "default"],
+        "properties": {
+          "type": { "enum": ["number", "integer", "boolean", "string", "enum"] },
+          "default": {},
+          "min": { "type": "number" },
+          "max": { "type": "number" },
+          "options": { "type": "array" },
+          "label": { "type": "string" }
+        }
+      }
+    },
+    "universe": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "exchange": { "type": "array", "items": { "enum": ["IDX"] } },
+        "boards": { "type": "array", "items": { "enum": ["main", "development", "acceleration"] } },
+        "exclude_flags": {
+          "type": "array",
+          "items": { "enum": ["special_monitoring", "suspension", "full_call_auction", "going_concern", "delisted"] }
+        },
+        "index_any": { "type": ["array", "null"], "items": { "type": "string" } },
+        "sector_class_exclude": { "type": "array", "items": { "$ref": "#/$defs/sectorClass" } },
+        "sector_class_only": { "type": "array", "items": { "$ref": "#/$defs/sectorClass" } },
+        "min_avg_daily_value_idr": { "$ref": "#/$defs/numberOrParam" },
+        "min_market_cap_idr": { "$ref": "#/$defs/numberOrParam" },
+        "max_market_cap_idr": { "$ref": "#/$defs/numberOrParam" },
+        "min_years_listed": { "$ref": "#/$defs/numberOrParam" },
+        "require_ttm": { "type": "boolean", "default": true }
+      }
+    },
+    "filters": { "$ref": "#/$defs/node" },
+    "sector_profiles": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["with"],
+        "properties": {
+          "replace": { "type": "array", "items": { "type": "string" } },
+          "with": { "$ref": "#/$defs/node" }
+        }
+      }
+    },
+    "rank": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "method": { "enum": ["single", "sum_of_ranks", "decile_composite", "z_weighted"], "default": "single" },
+        "scope": { "enum": ["pre_filter", "post_filter"], "default": "post_filter" },
+        "by": { "type": "array", "items": { "$ref": "#/$defs/rankComponent" } },
+        "components": { "type": "array", "items": { "$ref": "#/$defs/rankComponent" } },
+        "select": { "type": "object", "properties": { "composite_decile": { "type": "integer" } } },
+        "then_rank_by": { "type": "array", "items": { "$ref": "#/$defs/rankComponent" } },
+        "tie_break": { "type": "array", "items": { "$ref": "#/$defs/rankComponent" } },
+        "winsorize": { "type": "number", "minimum": 0, "maximum": 0.2 },
+        "limit": { "$ref": "#/$defs/numberOrParam" }
+      }
+    }
+  },
+  "$defs": {
+    "sectorClass": {
+      "enum": ["non_financial", "bank", "insurance", "multifinance", "property", "reit", "utility_regulated", "mining", "holding"]
+    },
+    "numberOrParam": {
+      "oneOf": [{ "type": "number" }, { "type": "string", "pattern": "^\\{\\{[a-z0-9_]+\\}\\}$" }]
+    },
+    "rankComponent": {
+      "type": "object",
+      "required": ["metric", "dir"],
+      "additionalProperties": false,
+      "properties": {
+        "metric": { "type": "string" },
+        "dir": { "enum": ["asc", "desc"] },
+        "weight": { "type": "number" }
+      }
+    },
+    "leafCommon": {
+      "type": "object",
+      "properties": {
+        "label": { "type": "string" },
+        "weight": { "type": "number" },
+        "severity": { "enum": ["hard", "soft"], "default": "hard" }
+      }
+    },
+    "node": {
+      "oneOf": [
+        { "type": "object", "required": ["all"], "properties": { "all": { "type": "array", "items": { "$ref": "#/$defs/node" }, "minItems": 1 } } },
+        { "type": "object", "required": ["any"], "properties": { "any": { "type": "array", "items": { "$ref": "#/$defs/node" }, "minItems": 1 } } },
+        { "type": "object", "required": ["not"], "properties": { "not": { "$ref": "#/$defs/node" } } },
+        {
+          "type": "object", "required": ["atLeast", "of"],
+          "properties": {
+            "atLeast": { "type": "integer", "minimum": 1 },
+            "of": { "type": "array", "items": { "$ref": "#/$defs/node" }, "minItems": 2 }
+          }
+        },
+        {
+          "type": "object", "required": ["metric", "op"],
+          "properties": {
+            "metric": { "type": "string" },
+            "op": { "enum": [">", ">=", "<", "<=", "==", "!=", "between", "in", "not_in"] },
+            "value": {},
+            "percentile_of": { "enum": ["universe", "sector", "subsector"] },
+            "compare_to": { "enum": ["sector_median", "sector_mean", "universe_median", "subsector_median"] },
+            "label": { "type": "string" },
+            "weight": { "type": "number" },
+            "severity": { "enum": ["hard", "soft"] }
+          }
+        },
+        {
+          "type": "object", "required": ["expr"],
+          "properties": {
+            "expr": { "type": "string" },
+            "label": { "type": "string" },
+            "weight": { "type": "number" },
+            "severity": { "enum": ["hard", "soft"] }
+          }
+        },
+        {
+          "type": "object", "required": ["streak"],
+          "properties": {
+            "streak": {
+              "type": "object",
+              "required": ["metric", "op", "value", "periods", "grain"],
+              "properties": {
+                "metric": { "type": "string" },
+                "op": { "enum": [">", ">=", "<", "<=", "==", "!="] },
+                "value": { "type": "number" },
+                "periods": { "type": "integer", "minimum": 2 },
+                "grain": { "enum": ["fy", "quarter"] },
+                "allow_gaps": { "type": "integer", "minimum": 0, "default": 0 }
+              }
+            },
+            "label": { "type": "string" },
+            "severity": { "enum": ["hard", "soft"] }
+          }
+        },
+        {
+          "type": "object", "required": ["history"],
+          "properties": {
+            "history": {
+              "type": "object",
+              "required": ["metric", "op", "value", "periods", "grain", "quantifier"],
+              "properties": {
+                "metric": { "type": "string" },
+                "op": { "enum": [">", ">=", "<", "<=", "==", "!="] },
+                "value": { "type": "number" },
+                "periods": { "type": "integer", "minimum": 2 },
+                "grain": { "enum": ["fy", "quarter"] },
+                "quantifier": { "type": "string", "pattern": "^(all|any|atLeast:\\d+)$" }
+              }
+            },
+            "label": { "type": "string" },
+            "severity": { "enum": ["hard", "soft"] }
+          }
+        },
+        {
+          "type": "object", "required": ["cross"],
+          "properties": {
+            "cross": {
+              "type": "object",
+              "required": ["metric", "op", "percentile"],
+              "properties": {
+                "metric": { "type": "string" },
+                "op": { "enum": [">", ">=", "<", "<="] },
+                "percentile": { "type": "number", "minimum": 0, "maximum": 1 },
+                "within": { "enum": ["universe", "sector", "subsector"], "default": "universe" }
+              }
+            },
+            "label": { "type": "string" },
+            "severity": { "enum": ["hard", "soft"] }
+          }
+        }
+      ]
+    }
+  }
+}

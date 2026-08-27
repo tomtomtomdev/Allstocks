@@ -1,0 +1,67 @@
+{
+  "id": "graham-defensive",
+  "version": "1.0.0",
+  "name": "Graham Defensive Investor",
+  "name_id": "Investor Defensif Graham",
+  "summary": "Large, financially strong, consistently profitable dividend payers bought at a moderate price.",
+  "source": {
+    "type": "book",
+    "title": "The Intelligent Investor",
+    "author": "Benjamin Graham",
+    "edition": "revised 2003",
+    "locator": "ch. 14",
+    "fidelity": "adapted",
+    "adaptations": [
+      "Size threshold scaled from 1972 USD sales to an IDX-relevant IDR revenue floor.",
+      "Earnings streak relaxed from 10 to 7 fiscal years (provider history depth).",
+      "Dividend record relaxed from 20 to 5 consecutive years (IDX listing ages).",
+      "Banks routed to a sector profile instead of being excluded, as they dominate IDX market cap."
+    ]
+  },
+  "params": {
+    "min_revenue_idr":     { "type": "number",  "default": 2000000000000, "label": "Min TTM revenue" },
+    "eps_streak_years":    { "type": "integer", "default": 7,  "min": 5, "max": 10, "label": "Consecutive profitable years" },
+    "dividend_years":      { "type": "integer", "default": 5,  "min": 3, "max": 20, "label": "Consecutive dividend years" },
+    "max_pe_avg3y":        { "type": "number",  "default": 15, "label": "Max P/E on 3-year average EPS" },
+    "top_n":               { "type": "integer", "default": 30, "min": 5, "max": 100 }
+  },
+  "universe": {
+    "exchange": ["IDX"],
+    "boards": ["main", "development"],
+    "exclude_flags": ["special_monitoring", "suspension", "full_call_auction"],
+    "min_avg_daily_value_idr": 1000000000,
+    "min_years_listed": 2,
+    "require_ttm": true
+  },
+  "filters": {
+    "all": [
+      { "metric": "revenue_ttm", "op": ">=", "value": "{{min_revenue_idr}}", "label": "Adequate size" },
+      { "metric": "current_ratio", "op": ">=", "value": 2, "label": "Current ratio at least 2x" },
+      { "expr": "long_term_debt <= working_capital", "label": "Long-term debt within working capital" },
+      { "streak": { "metric": "net_profit_attributable", "op": ">", "value": 0, "periods": 7, "grain": "fy", "allow_gaps": 0 },
+        "label": "Profitable every year for 7 years" },
+      { "metric": "years_consecutive_dividend", "op": ">=", "value": "{{dividend_years}}", "label": "Uninterrupted dividends" },
+      { "metric": "eps_growth_10y_pct", "op": ">=", "value": 33, "label": "EPS up at least a third over 10 years" },
+      { "metric": "pe_avg3y", "op": "<=", "value": "{{max_pe_avg3y}}", "label": "Moderate P/E on average earnings" },
+      { "any": [
+          { "metric": "pb", "op": "<=", "value": 1.5, "label": "P/B at most 1.5x" },
+          { "expr": "pe_ttm * pb <= 22.5", "label": "P/E x P/B at most 22.5" }
+      ]}
+    ]
+  },
+  "sector_profiles": {
+    "bank": {
+      "replace": ["current_ratio", "long_term_debt <= working_capital", "pb"],
+      "with": { "all": [
+        { "metric": "car", "op": ">=", "value": 12, "label": "Capital adequacy ratio at least 12%" },
+        { "metric": "ldr", "op": "between", "value": [78, 92], "label": "Loan-to-deposit ratio 78-92%" },
+        { "metric": "npl_gross_pct", "op": "<=", "value": 3, "label": "Gross NPL at most 3%" },
+        { "metric": "pb", "op": "<=", "value": 2.0, "label": "P/B at most 2.0x (bank)" }
+      ]}
+    }
+  },
+  "rank": { "method": "single", "by": [{ "metric": "graham_mos_pct", "dir": "desc" }], "limit": "{{top_n}}" },
+  "explain": true,
+  "min_data_completeness": 0.9,
+  "notes_md": "Graham intended these seven tests as a floor for the investor unwilling to do continuous research. All seven must pass; the funnel shows which test does the culling in the current market."
+}

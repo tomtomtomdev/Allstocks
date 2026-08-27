@@ -1,0 +1,50 @@
+{
+  "id": "trending-value",
+  "version": "1.0.0",
+  "name": "Trending Value",
+  "summary": "Cheapest decile on a six-factor value composite, then the strongest 6-month momentum among them.",
+  "source": {
+    "type": "book",
+    "title": "What Works on Wall Street",
+    "author": "James P. O'Shaughnessy",
+    "edition": "4th ed., 2011",
+    "locator": "Value Composite Two; Trending Value combination",
+    "fidelity": "adapted",
+    "adaptations": [
+      "EV/EBITDA is dropped from the composite for banks and their composite is renormalized over the remaining five factors.",
+      "If the eligible universe falls below 300 names the selection widens from the cheapest decile to the cheapest quintile, and the UI states it."
+    ]
+  },
+  "params": { "top_n": { "type": "integer", "default": 25, "min": 10, "max": 50 } },
+  "universe": {
+    "exchange": ["IDX"],
+    "boards": ["main", "development"],
+    "exclude_flags": ["special_monitoring", "suspension", "full_call_auction"],
+    "min_market_cap_idr": 750000000000,
+    "min_avg_daily_value_idr": 2000000000,
+    "min_years_listed": 2,
+    "require_ttm": true
+  },
+  "filters": {
+    "all": [
+      { "metric": "equity_attributable", "op": ">", "value": 0, "label": "Positive book value" }
+    ]
+  },
+  "rank": {
+    "method": "decile_composite",
+    "scope": "pre_filter",
+    "components": [
+      { "metric": "pe_ttm", "dir": "asc" },
+      { "metric": "pb", "dir": "asc" },
+      { "metric": "ps_ttm", "dir": "asc" },
+      { "metric": "pcf_ttm", "dir": "asc" },
+      { "metric": "ev_ebitda", "dir": "asc" },
+      { "metric": "shareholder_yield", "dir": "desc" }
+    ],
+    "select": { "composite_decile": 1 },
+    "then_rank_by": [{ "metric": "return_6m", "dir": "desc" }],
+    "limit": "{{top_n}}"
+  },
+  "explain": true,
+  "min_data_completeness": 0.85
+}
