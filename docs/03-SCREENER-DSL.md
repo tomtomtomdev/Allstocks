@@ -2,8 +2,8 @@
 
 A screener is a JSON document. The same document drives execution, the rule builder UI, the
 human-readable criteria list, and the compiled SQL. Schema:
-[schema/screener.schema.json](schema/screener.schema.json). Reference instances:
-[screeners/](screeners/).
+[schema/screener.schema.json](schema/screener.schema.json). Shipped definitions:
+[../screeners/](../screeners/).
 
 ---
 

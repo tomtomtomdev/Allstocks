@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 10 }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm test
+      - name: Validate screener definitions
+        run: pnpm screeners:validate
+
+  fixtures:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Provider fixtures are committed redacted (docs/01-STOCKBIT-ADAPTER.md §2.1).
+      # A token or an email address in one is a failing build, not a warning.
+      - name: No credentials in fixtures
+        run: |
+          if [ -d fixtures ] && [ -n "$(find fixtures -name '*.json' -print -quit)" ]; then
+            if grep -rEl 'eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}' fixtures/; then
+              echo "::error::unredacted credential or email address found in fixtures/"
+              exit 1
+            fi
+          fi
+          echo "fixtures clean"

@@ -128,10 +128,13 @@ Composite Two + the Trending Value combination. Fidelity: **adapted**.
 - `decile_composite` over six factors, equal-weighted decile ranks: `pe_ttm` asc, `pb` asc,
   `ps_ttm` asc, `pcf_ttm` asc, `ev_ebitda` asc, `shareholder_yield` desc.
 - Keep the **cheapest composite decile**, then rank by `return_6m` desc, take top 25.
-- Universe: `market_cap ≥ Rp 750 bn`, ADTV ≥ Rp 2 bn, all sectors **including** financials
-  (O'Shaughnessy's "all stocks" universe), but `ev_ebitda` is excluded from the composite for
-  `sector_class = bank` and their composite is renormalized over the remaining five factors —
-  the renormalization is disclosed in the row's hover card.
+- Universe: `market_cap ≥ Rp 750 bn`, ADTV ≥ Rp 2 bn. O'Shaughnessy screens an "all stocks"
+  universe including financials, with `ev_ebitda` dropped from the composite for banks and the
+  composite renormalized over the remaining five factors. **The DSL cannot express a per-sector
+  composite yet**, and shipping the all-stocks universe without it would rank banks on a factor
+  that is `NULL` for them — so `trending-value@1.0.0` excludes financials and says so in its
+  `adaptations`. Per-sector composite renormalization is an M5 item; when it lands, financials
+  come back in and the version bumps.
 - IDX adaptation: with ~950 tickers, a decile is ~60 names after universe filters, well above the
   25 selected, so the method survives the smaller market. If the eligible universe falls below
   300, the app widens to the cheapest **quintile** and says so in the header.

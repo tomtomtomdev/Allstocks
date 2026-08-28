@@ -1,0 +1,35 @@
+{
+  "name": "allstocks",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "typecheck": "turbo run typecheck",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "screeners:validate": "tsx scripts/validate-screeners.ts",
+    "schema:generate": "tsx scripts/generate-schema.ts",
+    "db:up": "docker compose -f infra/docker-compose.yml up -d postgres redis",
+    "db:down": "docker compose -f infra/docker-compose.yml down",
+    "check": "pnpm typecheck && pnpm lint && pnpm test && pnpm screeners:validate"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}

@@ -8,10 +8,11 @@ calendar weeks. Each milestone ends with something demonstrable; nothing is "int
 - Docker compose: Postgres 16, Redis. Drizzle migrations from [sql/001_core.sql](sql/001_core.sql).
 - Zod env config, pino logging with the token redaction test, OTel bootstrap.
 - CI: typecheck, lint, unit tests, `screeners:validate`.
-- The screener JSON Schema generated from zod; the four reference screeners in
-  [screeners/](screeners/) validate in CI.
-- **Done when:** `pnpm dev` boots web + worker against an empty warehouse and the schema validator
-  passes in CI.
+- Screener DSL as zod schemas in `packages/core` plus the published JSON Schema; the four
+  shipped screeners in [../screeners/](../screeners/) must satisfy **both** in CI, which is what
+  catches drift between the schema we publish and the one we enforce.
+- **Done when:** `pnpm check` (typecheck, lint, tests, screener validation) is green, and
+  `pnpm dev` boots web + worker against an empty warehouse.
 
 ## M1 — Stockbit adapter · ~2 weeks
 - Endpoint discovery per [01-STOCKBIT-ADAPTER.md](01-STOCKBIT-ADAPTER.md) §2; commit

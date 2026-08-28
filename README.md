@@ -27,8 +27,21 @@ the build spec that the implementation will follow.
 | [docs/06-ROADMAP.md](docs/06-ROADMAP.md) | Milestones M0–M6, definition of done, estimates |
 | [docs/07-RISKS-AND-COMPLIANCE.md](docs/07-RISKS-AND-COMPLIANCE.md) | Legal/ToS posture, data risks, mitigations, open questions |
 | [docs/schema/screener.schema.json](docs/schema/screener.schema.json) | JSON Schema for screener definitions |
-| [docs/screeners/](docs/screeners/) | Machine-readable screener definitions (reference instances) |
+| [screeners/](screeners/) | Machine-readable screener definitions, validated in CI |
 | [docs/sql/001_core.sql](docs/sql/001_core.sql) | Core DDL for the reference Postgres schema |
+
+## Running it
+
+```bash
+pnpm install
+pnpm check          # typecheck, lint, tests, screener validation — this is what CI runs
+pnpm db:up          # postgres + redis (applies docs/sql/001_core.sql on first boot)
+```
+
+`pnpm screeners:validate` alone checks every file in `screeners/` against **both** the published
+JSON Schema and the runtime zod schema plus the semantic rules — unknown metric keys, sector
+applicability, the `expr` grammar, parameter wiring, ranking coherence. A screener that would
+silently screen banks on current ratio fails the build.
 
 ## Read this first
 
