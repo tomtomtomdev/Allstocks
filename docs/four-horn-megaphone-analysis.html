@@ -1,0 +1,786 @@
+<title>The Four-Horn Seam</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@400;500;600;700&display=swap">
+<style>
+  :root{
+    --ground:#EEF2F1; --paper:#FBFCFC; --sunk:#E4EAE8;
+    --ink:#141E1C; --ink2:#4E5C59; --ink3:#788784;
+    --rule:#CBD6D3; --rule2:#DFE7E5;
+    --accent:#0B6A62; --accent-soft:#0b6a621f;
+    --alert:#B4441F; --alert-soft:#b4441f1c;
+    --warn:#8E6A11; --ok:#0B6A62;
+    --serif:"IBM Plex Serif",Georgia,"Times New Roman",serif;
+    --sans:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif;
+    --mono:"IBM Plex Mono","SF Mono",Menlo,Consolas,monospace;
+    --measure:64ch;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --ground:#101718; --paper:#182122; --sunk:#131B1C;
+      --ink:#E4EDEB; --ink2:#9BABA8; --ink3:#758783;
+      --rule:#2B3737; --rule2:#222D2E;
+      --accent:#46CFBE; --accent-soft:#46cfbe1f;
+      --alert:#FF9068; --alert-soft:#ff90681c;
+      --warn:#DCB44C; --ok:#46CFBE;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#101718; --paper:#182122; --sunk:#131B1C;
+    --ink:#E4EDEB; --ink2:#9BABA8; --ink3:#758783;
+    --rule:#2B3737; --rule2:#222D2E;
+    --accent:#46CFBE; --accent-soft:#46cfbe1f;
+    --alert:#FF9068; --alert-soft:#ff90681c;
+    --warn:#DCB44C; --ok:#46CFBE;
+  }
+  *{box-sizing:border-box}
+  body{background:var(--ground); color:var(--ink); font-family:var(--sans);
+       font-size:16px; line-height:1.62; -webkit-font-smoothing:antialiased;}
+  .sheet{max-width:1000px; margin:0 auto; background:var(--paper);
+         border-left:1px solid var(--rule2); border-right:1px solid var(--rule2);
+         padding:0 clamp(18px,4vw,64px) 88px;}
+  .col{max-width:var(--measure);}
+  h1,h2,h3{font-family:var(--serif); text-wrap:balance; margin:0;}
+  p{margin:0}
+  a{color:var(--accent); text-decoration-thickness:1px; text-underline-offset:2px}
+  .eyebrow{font-family:var(--mono); font-size:11px; letter-spacing:.13em;
+           text-transform:uppercase; color:var(--ink3); margin:0}
+
+  /* ---------- masthead ---------- */
+  header{padding:56px 0 34px; border-bottom:2px solid var(--ink);}
+  header .eyebrow{margin-bottom:22px}
+  h1{font-size:clamp(30px,4.6vw,50px); font-weight:600; line-height:1.08;
+     letter-spacing:-.02em; max-width:24ch;}
+  .standfirst{font-size:19px; color:var(--ink2); margin-top:20px; max-width:58ch; line-height:1.55}
+  .byline{display:flex; flex-wrap:wrap; gap:10px 26px; margin-top:28px;
+          font-family:var(--mono); font-size:11.5px; color:var(--ink3);
+          letter-spacing:.04em; text-transform:uppercase}
+
+  /* ---------- verdict ---------- */
+  .verdict{margin:0 0 4px; padding:30px 0 34px; border-bottom:1px solid var(--rule);}
+  .vgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(178px,1fr)); gap:1px;
+         background:var(--rule); border:1px solid var(--rule); margin-top:22px}
+  .vcell{background:var(--paper); padding:16px 18px 18px}
+  .vcell .k{font-family:var(--mono); font-size:10.5px; letter-spacing:.1em;
+            text-transform:uppercase; color:var(--ink3)}
+  .vcell .v{font-family:var(--mono); font-size:27px; font-weight:500; margin-top:8px;
+            letter-spacing:-.02em; font-variant-numeric:tabular-nums}
+  .vcell .n{font-size:13.5px; color:var(--ink2); margin-top:6px; line-height:1.45}
+  .bad .v{color:var(--alert)} .good .v{color:var(--ok)} .mid .v{color:var(--warn)}
+
+  /* ---------- stages ---------- */
+  section.stage{display:grid; grid-template-columns:44px 1fr; gap:0 22px;
+                padding:44px 0 4px; border-top:1px solid var(--rule2)}
+  section.stage:first-of-type{border-top:none}
+  .num{font-family:var(--mono); font-size:12px; font-weight:600; color:var(--accent);
+       letter-spacing:.06em; padding-top:9px}
+  .num span{display:block; color:var(--ink3); font-weight:400; font-size:10.5px;
+            margin-top:5px; letter-spacing:.1em}
+  h2{font-size:clamp(21px,2.5vw,27px); font-weight:600; letter-spacing:-.015em; line-height:1.2}
+  .stage .body{display:flex; flex-direction:column; gap:17px; min-width:0}
+  .stage .body p{max-width:var(--measure)}
+  h3{font-size:15.5px; font-weight:600; margin-top:9px; letter-spacing:-.005em}
+  .lead{font-size:17.5px; color:var(--ink2)}
+
+  /* ---------- figures ---------- */
+  figure{margin:12px 0 6px; min-width:0}
+  figcaption{font-family:var(--mono); font-size:11.5px; color:var(--ink3);
+             line-height:1.6; margin-top:14px; max-width:76ch}
+  figcaption b{color:var(--ink2); font-weight:500}
+  .scroll{overflow-x:auto; padding-bottom:4px}
+  .polars{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; min-width:520px}
+  .polar h4{margin:0 0 8px; font-family:var(--mono); font-size:12px; font-weight:600;
+            letter-spacing:.04em; display:flex; justify-content:space-between; align-items:baseline}
+  .polar h4 em{font-style:normal; font-weight:400; color:var(--ink3); font-size:10.5px}
+  .polar svg{display:block; width:100%; height:auto; background:var(--sunk);
+             border:1px solid var(--rule2)}
+  .pshape{fill:var(--accent-soft); stroke:var(--accent); stroke-width:2; }
+  .pshape.hot{fill:var(--alert-soft); stroke:var(--alert)}
+  .grid-l{fill:none; stroke:var(--rule); stroke-width:1}
+  .axis-l{stroke:var(--ink3); stroke-width:1; opacity:.5}
+  .seam-l{stroke:var(--alert); stroke-width:1; stroke-dasharray:3 4; opacity:.75}
+  .tick{font-family:var(--mono); font-size:9px; fill:var(--ink3)}
+
+  /* ---------- tables ---------- */
+  table{border-collapse:collapse; width:100%; font-size:13.5px; min-width:440px}
+  caption{text-align:left; font-family:var(--mono); font-size:11px; letter-spacing:.1em;
+          text-transform:uppercase; color:var(--ink3); padding-bottom:9px}
+  th,td{text-align:right; padding:8px 12px; border-bottom:1px solid var(--rule2);
+        font-variant-numeric:tabular-nums}
+  th:first-child,td:first-child{text-align:left; font-variant-numeric:normal}
+  thead th{font-family:var(--mono); font-size:10.5px; letter-spacing:.06em; font-weight:500;
+           text-transform:uppercase; color:var(--ink3); border-bottom:1px solid var(--ink);
+           vertical-align:bottom; padding-bottom:7px}
+  tbody td{font-family:var(--mono)}
+  tbody td:first-child{font-family:var(--sans)}
+  tbody tr:last-child td{border-bottom:none}
+  .hl{background:var(--alert-soft)}
+  .hl td{color:var(--alert)} .hl td:first-child{color:var(--ink)}
+  td.f{color:var(--alert); font-weight:500} td.g{color:var(--ok)} td.m{color:var(--warn)}
+  td.q{text-align:left; font-family:var(--sans); color:var(--ink2); font-size:13px}
+
+  /* ---------- callout ---------- */
+  .key{border-left:3px solid var(--accent); padding:2px 0 2px 20px; margin:6px 0;
+       max-width:var(--measure)}
+  .key .eyebrow{color:var(--accent); margin-bottom:7px}
+  .key p{font-family:var(--serif); font-size:18.5px; line-height:1.48}
+  .key.warn{border-left-color:var(--alert)} .key.warn .eyebrow{color:var(--alert)}
+  .caveat{background:var(--sunk); border:1px solid var(--rule2); padding:17px 20px;
+          font-size:13.5px; color:var(--ink2); line-height:1.56; max-width:var(--measure)}
+  .caveat strong{color:var(--ink)}
+  code{font-family:var(--mono); font-size:.9em; background:var(--sunk);
+       padding:1px 5px; border:1px solid var(--rule2)}
+  .eq{font-family:var(--mono); font-size:14px; background:var(--sunk);
+      border:1px solid var(--rule2); border-left:3px solid var(--accent);
+      padding:13px 18px; overflow-x:auto; max-width:var(--measure); color:var(--ink)}
+
+  /* ---------- remedies ---------- */
+  .tier{border-top:1px solid var(--rule); padding-top:16px; margin-top:8px}
+  .tier .eyebrow{color:var(--accent)}
+  .tier > p.t{font-family:var(--serif); font-size:16px; color:var(--ink2); margin:6px 0 14px}
+  ol.fixes{list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:14px;
+           counter-reset:fx}
+  ol.fixes.c2{counter-reset:fx 3} ol.fixes.c3{counter-reset:fx 6} ol.fixes.c4{counter-reset:fx 8}
+  ol.fixes li{counter-increment:fx; display:grid; grid-template-columns:26px 1fr; gap:0 14px;
+              max-width:var(--measure)}
+  ol.fixes li::before{content:counter(fx,decimal-leading-zero); font-family:var(--mono);
+              font-size:11px; color:var(--ink3); padding-top:4px}
+  ol.fixes b{font-weight:600}
+  ol.fixes span{color:var(--ink2); font-size:14.5px; display:block; margin-top:2px}
+
+  footer{margin-top:52px; padding-top:26px; border-top:2px solid var(--ink);
+         font-family:var(--mono); font-size:11.5px; color:var(--ink3); line-height:1.75;
+         max-width:76ch}
+  @media (max-width:640px){
+    section.stage{grid-template-columns:1fr; gap:12px}
+    .num{padding-top:0; display:flex; gap:10px; align-items:baseline}
+    .num span{margin-top:0}
+    :root{--measure:100%}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+  :focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+</style>
+
+<div class="sheet">
+<header>
+  <p class="eyebrow">Acoustic systems analysis &middot; loudspeaker directivity</p>
+  <h1>Why four horns don&rsquo;t make four times the megaphone</h1>
+  <p class="standfirst">Four directional horns splayed 90&deg; apart for 360&deg; coverage look like
+  four times the system. The arrangement spends the horns&rsquo; one real asset &mdash; directivity &mdash;
+  to buy angular coverage, then under-delivers that coverage in exactly the octaves that carry
+  consonants. The defect is invisible to the measurement everyone takes.</p>
+  <div class="byline">
+    <span>Illustrative model &middot; assumptions stated</span>
+    <span>4 &times; 25 W &middot; 110 dB/W/m &middot; 90&deg; spacing</span>
+  </div>
+</header>
+
+<div class="verdict">
+  <p class="eyebrow">The finding in four numbers</p>
+  <div class="vgrid">
+    <div class="vcell bad"><div class="k">Level cost of splitting</div>
+      <div class="v">&minus;6.0 dB</div>
+      <div class="n">In <em>every</em> direction, versus the same amplifier on one horn.</div></div>
+    <div class="vcell good"><div class="k">Seam, broadband SPL</div>
+      <div class="v">&minus;4.1 dB</div>
+      <div class="n">What the sound level meter reports. Passes commissioning.</div></div>
+    <div class="vcell bad"><div class="k">Same seam, 4 kHz octave</div>
+      <div class="v">&minus;27 dB</div>
+      <div class="n">Where /s/, /t/, /f/, /k/ live. The meter cannot see this.</div></div>
+    <div class="vcell bad"><div class="k">Articulation loss at 30 m</div>
+      <div class="v">26.8%</div>
+      <div class="n">Against 6.7% for one aimed horn. Same hardware, same power.</div></div>
+  </div>
+</div>
+
+<!-- ============ 1 ============ -->
+<section class="stage">
+  <div class="num">01<span>PREMISE</span></div>
+  <div class="body">
+    <h2>The apparent advantage</h2>
+    <p class="lead">Three of the four reasons to like this design are sound. The fourth is the
+    one everybody actually buys it for.</p>
+    <p>A horn is an acoustic transformer and a directivity device at once. A representative
+    re-entrant paging horn reaches about 110&nbsp;dB SPL at 1&nbsp;W / 1&nbsp;m on axis, against
+    roughly 88&ndash;92&nbsp;dB for a direct-radiating cone of similar size &mdash; a 20&nbsp;dB
+    advantage, part genuine efficiency, part concentration into a restricted solid angle.</p>
+    <div class="eq">Q &asymp; 41253 / (&theta;<sub>h</sub> &times; &theta;<sub>v</sub>) = 41253 / (60 &times; 40) = 17.2  &rarr;  DI &asymp; 12.4 dB</div>
+    <p>That 12.4&nbsp;dB is the asset. Four such horns tile the whole circle, so no listener sits
+    behind the system and the aiming problem disappears; each driver runs at a quarter power, which
+    helps thermal compression and distortion. All true. The claim that does not survive is the
+    implied one: that four horns are therefore <em>louder</em>.</p>
+  </div>
+</section>
+
+<!-- ============ 2 ============ -->
+<section class="stage">
+  <div class="num">02<span>POWER</span></div>
+  <div class="body">
+    <h2>Four horns produce no extra level anywhere</h2>
+    <p>Total radiated acoustic power and sound pressure at a listener are different quantities.
+    Adding horns raises the first and leaves the second alone, because each new horn radiates into
+    a <em>different</em> solid angle. Stand in front of horn&nbsp;1 and you receive essentially all
+    your signal from horn&nbsp;1: horns 2 and 4 are 90&deg; off their own axes as seen from you,
+    horn&nbsp;3 points away. Their power is, from your position, discarded.</p>
+    <p>Doubling pressure at a point needs <em>coherent summation at that point</em> &mdash; two
+    sources arriving at comparable level, in phase. That requires them aimed at the same place.
+    Horns 90&deg; apart are, by construction, doing the opposite.</p>
+    <figure class="scroll">
+      <table>
+        <caption>Fixed 100 W amplifier, 110 dB/W/m horns &mdash; illustrative</caption>
+        <thead><tr><th>Configuration</th><th>W / horn</th><th>On-axis SPL @ 1 m</th><th>Coverage</th></tr></thead>
+        <tbody>
+          <tr><td>100 W &rarr; one horn</td><td>100</td><td class="g">130.0 dB</td><td>~60&deg;</td></tr>
+          <tr class="hl"><td>100 W &rarr; four horns</td><td>25</td><td>124.0 dB</td><td>~240&deg;</td></tr>
+          <tr><td>400 W &rarr; four horns</td><td>100</td><td class="g">130.0 dB</td><td>~240&deg;</td></tr>
+        </tbody>
+      </table>
+      <figcaption>The middle row is the design as usually built: <b>6.0 dB quieter in every
+      direction</b> than the same amplifier on a single horn. Six decibels is a halving of
+      perceived loudness and a halving of usable range.</figcaption>
+    </figure>
+    <p>The same fact reads a second way, as directivity. Four 60&deg;&times;40&deg; horns tiled
+    without gaps span 240&deg;&times;40&deg;, giving Q&nbsp;=&nbsp;4.30 and DI&nbsp;=&nbsp;6.3&nbsp;dB
+    &mdash; precisely 17.2/4. <strong>Splaying horns converts directivity into coverage,
+    one&#8209;for&#8209;one.</strong> The 6.1&nbsp;dB of DI thrown away and the 6.0&nbsp;dB of SPL
+    lost are the same event described twice.</p>
+    <h3>And efficiency is not the problem</h3>
+    <p>Working back from 110&nbsp;dB/W/m at Q&nbsp;=&nbsp;17.2: 0.071&nbsp;W acoustic from
+    1&nbsp;W electrical, about <b>7% efficient</b>, against 0.5&ndash;2% for a direct radiator.
+    Efficiency is the horn&rsquo;s strength. Keep it in proportion for what follows &mdash; halving
+    it would cost 3&nbsp;dB, and the next section finds a 27&nbsp;dB problem.</p>
+    <div class="key"><p class="eyebrow">Verdict on power</p>
+      <p>The system is not short of acoustic power. The power <em>accounting</em> is wrong &mdash;
+      there is no 4&times; gain, there is a 6 dB loss per direction &mdash; but raw output is rarely
+      the binding constraint.</p></div>
+  </div>
+</section>
+
+<!-- ============ 3 ============ -->
+<section class="stage">
+  <div class="num">03<span>COVERAGE</span></div>
+  <div class="body">
+    <h2>The coverage it buys is frequency-dependent</h2>
+    <p>Four horns at 90&deg; spacing cover the circle uniformly <em>only if each horn&rsquo;s
+    &minus;6&nbsp;dB beamwidth is at least 90&deg;.</em> That is the classical &minus;6&nbsp;dB
+    crossover criterion: adjacent sources each 6&nbsp;dB down sum to 3&nbsp;dB down, giving
+    &plusmn;3&nbsp;dB of ripple around the circle.</p>
+    <p>But horn beamwidth is strongly frequency-dependent. A horn is near-omnidirectional below the
+    frequency at which its mouth becomes acoustically large, and narrows steadily above it &mdash;
+    narrowing fastest exactly where intelligibility lives.</p>
+
+    <figure>
+      <div class="scroll"><div class="polars" id="polars"></div></div>
+      <figcaption>Horizontal pattern of the four-horn array by octave band, from the model in
+      &sect;07. Each plot is normalised to its own on-axis level; rings mark <b>&minus;6, &minus;12,
+      &minus;18, &minus;24 dB</b>, centre is &minus;30 dB. Solid spokes are the horn axes, dashed
+      spokes the 45&deg; seams. <b>The array is a circle at 500 Hz, a rounded square at 1 kHz, a
+      four-petal flower at 2 kHz and four searchlights at 4 kHz.</b> No single polar plot describes
+      this system.</figcaption>
+    </figure>
+
+    <figure class="scroll">
+      <table>
+        <caption>Horn count required for &minus;6 dB crossover, by band</caption>
+        <thead><tr><th>Octave band</th><th>&minus;6 dB beamwidth</th><th>Horns needed</th><th>Have</th><th>Level at 45&deg; seam</th></tr></thead>
+        <tbody>
+          <tr><td>500 Hz</td><td>100&deg;</td><td>4</td><td class="g">4</td><td class="g">&minus;1.9 dB</td></tr>
+          <tr><td>1 kHz</td><td>90&deg;</td><td>4</td><td class="g">4</td><td class="g">&minus;3.0 dB</td></tr>
+          <tr><td>2 kHz</td><td>60&deg;</td><td>6</td><td class="m">4</td><td class="m">&minus;10.5 dB</td></tr>
+          <tr class="hl"><td>4 kHz</td><td>40&deg;</td><td>9</td><td>4</td><td>&minus;27.4 dB</td></tr>
+        </tbody>
+      </table>
+      <figcaption>Correctly configured for the vowels. Under-populated by 50% at 2 kHz and by more
+      than 100% at 4 kHz &mdash; <b>a well-designed system for vowels and a badly-designed one for
+      consonants.</b></figcaption>
+    </figure>
+
+    <h3>Nominal 360&deg; versus uniform 360&deg;</h3>
+    <p>The system does radiate into all 360&deg;. Every azimuth receives sound. It is still not a
+    360&deg; system in any useful sense, and the gap shows up as a disagreement between
+    instruments pointed at the same spot:</p>
+    <figure class="scroll">
+      <table>
+        <caption>Three measurements at the same 45&deg; position</caption>
+        <thead><tr><th>Metric</th><th>Value</th><th>Reading</th></tr></thead>
+        <tbody>
+          <tr><td>Broadband, speech-weighted SPL</td><td class="g">&minus;4.1 dB</td><td class="q">&ldquo;acceptable, minor ripple&rdquo; &mdash; passes</td></tr>
+          <tr><td>2 kHz octave</td><td class="m">&minus;10.5 dB</td><td class="q">marginal</td></tr>
+          <tr class="hl"><td>4 kHz octave</td><td>&minus;27.4 dB</td><td class="q">failed</td></tr>
+        </tbody>
+      </table>
+    </figure>
+    <div class="key warn"><p class="eyebrow">The central result</p>
+      <p>The coverage seam is not a level defect. It is a spectral defect that a level measurement
+      cannot see. The system is loud and unintelligible at the same position &mdash; and loudness is
+      what gets measured.</p></div>
+    <p>Consequence for the listener: walking around the system changes the <em>timbre</em>, not the
+    volume. It gets duller and brighter rather than louder and quieter. Reported as
+    &ldquo;muffled in places&rdquo;, diagnosed as a power problem, treated by turning it up &mdash;
+    which does nothing at all.</p>
+  </div>
+</section>
+
+<!-- ============ 4 ============ -->
+<section class="stage">
+  <div class="num">04<span>INTERACTION</span></div>
+  <div class="body">
+    <h2>Interference: real, stable, and secondary</h2>
+    <p>The horns share a signal, so they are coherent sources and they interfere where their
+    patterns overlap. The honest scale of this effect is smaller than &sect;03 &mdash; and it is
+    worth being precise about where it applies, because it is the effect most often overstated.</p>
+    <figure class="scroll">
+      <table>
+        <caption>Interference contrast vs. level match between two coherent arrivals</caption>
+        <thead><tr><th>Level offset</th><th>Peak</th><th>Null</th><th>Peak-to-null</th></tr></thead>
+        <tbody>
+          <tr class="hl"><td>0 dB (matched)</td><td>+6.0 dB</td><td>&minus;&infin;</td><td>total cancellation</td></tr>
+          <tr><td>6 dB</td><td>+3.5 dB</td><td>&minus;6.0 dB</td><td class="m">9.6 dB</td></tr>
+          <tr><td>10 dB</td><td>+2.4 dB</td><td>&minus;3.3 dB</td><td class="m">5.7 dB</td></tr>
+          <tr><td>15 dB</td><td>+1.4 dB</td><td>&minus;1.7 dB</td><td class="g">3.1 dB</td></tr>
+          <tr><td>20 dB</td><td>+0.8 dB</td><td>&minus;0.9 dB</td><td class="g">1.7 dB</td></tr>
+        </tbody>
+      </table>
+      <figcaption>Interference only matters where two horns arrive within roughly <b>10 dB</b> of
+      each other. Outside that window one horn dominates and the pattern is smooth.</figcaption>
+    </figure>
+    <div class="key"><p class="eyebrow">The structural tension</p>
+      <p>Narrow horns give small overlap zones &mdash; little interference, but large coverage gaps.
+      Wide horns give smooth level coverage &mdash; but large overlap zones, and therefore combing.
+      Splaying horns cannot escape this. You only choose which artefact you get.</p></div>
+    <p>On the exact bisector between two horns the mouths are equidistant, so the arrivals add in
+    phase: <b>+6&nbsp;dB</b> relative to one source, not the +3&nbsp;dB an incoherent estimate
+    predicts. Coherence <em>helps</em> on the seam centre. Move off it by angle &phi; and the path
+    difference is &Delta; &asymp; d&nbsp;sin&nbsp;&phi;. For a compact head with mouth-centre radius
+    0.2&nbsp;m, adjacent separation d&nbsp;=&nbsp;0.283&nbsp;m:</p>
+    <figure class="scroll">
+      <table>
+        <caption>Null angles from the seam bisector, d = 0.283 m</caption>
+        <thead><tr><th>Band</th><th>&lambda;</th><th>Nulls, degrees off bisector</th></tr></thead>
+        <tbody>
+          <tr><td>500 Hz</td><td>68.6 cm</td><td class="q g">none possible &mdash; d &lt; &lambda;/2</td></tr>
+          <tr><td>1 kHz</td><td>34.3 cm</td><td class="q">&plusmn;37&deg;</td></tr>
+          <tr><td>2 kHz</td><td>17.2 cm</td><td class="q">&plusmn;18&deg;, &plusmn;65&deg;</td></tr>
+          <tr><td>4 kHz</td><td>8.6 cm</td><td class="q">&plusmn;9&deg;, &plusmn;27&deg;, &plusmn;49&deg;</td></tr>
+        </tbody>
+      </table>
+    </figure>
+    <p>Below <b>c/2d &asymp; 606 Hz</b> no destructive null can exist anywhere: the sources are
+    closer than half a wavelength and behave as one. That splits the array&rsquo;s real behaviour
+    in two &mdash; and produces the design&rsquo;s quiet irony.</p>
+    <div class="caveat"><strong>Below ~600 Hz</strong> the four horns are acoustically one source.
+    They cannot be steered and cannot interfere, and the splayed geometry contributes nothing: four
+    amplifier channels are being spent to produce an omnidirectional low-frequency field.
+    <strong>Above ~1.5 kHz</strong> the geometry is under-populated and coverage breaks into petals.
+    The arrangement is well matched to the octave around 1 kHz, and only that octave &mdash; one
+    octave of a five-octave speech signal.</div>
+    <h3>Why it does not average out with distance &mdash; and why it is still not the main problem</h3>
+    <p>Beyond the array near field (R &gtrsim; 2d&sup2;/&lambda; &asymp; 1.9&nbsp;m at 4&nbsp;kHz)
+    the pattern becomes a <em>fixed function of angle</em>. It does not wash out: a listener at
+    50&nbsp;m in a null direction is in the same null as one at 20&nbsp;m. You cannot get far enough
+    away to escape a comb.</p>
+    <p>What limits its importance is spacing in frequency, &Delta;f&nbsp;=&nbsp;c/&Delta;. The
+    array&rsquo;s own path differences are &le;&nbsp;0.3&nbsp;m, so its combs are spaced 1&nbsp;kHz
+    and wider &mdash; broader than the ear&rsquo;s ⅓-octave filters, so they are heard as a change in
+    tone colour, not as comb filtering. The dense, intelligibility-destroying combs need path
+    differences of metres, which the array cannot produce. <b>Those come from the environment.</b></p>
+  </div>
+</section>
+
+<!-- ============ 5 ============ -->
+<section class="stage">
+  <div class="num">05<span>ENVIRONMENT</span></div>
+  <div class="body">
+    <h2>The room takes the rest</h2>
+    <p>Everything so far assumed free field. Real sites attack what directivity the array has left.</p>
+    <h3>Ground reflection: a comb that sweeps</h3>
+    <p>Source at 4&nbsp;m, ear at 1.6&nbsp;m, over reflective ground:</p>
+    <figure class="scroll">
+      <table>
+        <caption>Two-path ground interference &mdash; nulls land inside the speech band</caption>
+        <thead><tr><th>Distance</th><th>Path difference</th><th>1st null</th><th>2nd null</th></tr></thead>
+        <tbody>
+          <tr><td>10 m</td><td>1.18 m</td><td>146 Hz</td><td>437 Hz</td></tr>
+          <tr><td>20 m</td><td>0.63 m</td><td>274 Hz</td><td>822 Hz</td></tr>
+          <tr><td>30 m</td><td>0.42 m</td><td class="f">406 Hz</td><td class="f">1218 Hz</td></tr>
+          <tr><td>50 m</td><td>0.26 m</td><td class="f">672 Hz</td><td class="f">2017 Hz</td></tr>
+          <tr><td>100 m</td><td>0.13 m</td><td class="f">1341 Hz</td><td class="f">4023 Hz</td></tr>
+        </tbody>
+      </table>
+      <figcaption>The nulls sit in the speech band <b>and sweep with distance</b> &mdash; so this
+      comb cannot be equalised out: the correction needed at 30 m is wrong at 50 m.</figcaption>
+    </figure>
+    <h3>Surfaces, and a 360&deg; pattern&rsquo;s unique exposure</h3>
+    <p>A facade 20&nbsp;m behind the listener adds up to 40&nbsp;m of path &mdash; about
+    <b>117&nbsp;ms</b>. Speech integrates reflections usefully only within roughly the first
+    50&nbsp;ms; beyond that, a reflection within ~10&nbsp;dB of the direct sound is a discrete echo
+    that smears syllables. An aimed horn can be pointed <em>away</em> from a hard facade. A
+    four-horn array radiates a full quarter of its power into every surface around it, by design.
+    <strong>The 360&deg; pattern is not merely neutral toward reflective surfaces &mdash; it feeds
+    them.</strong></p>
+    <h3>Reverberation: high SPL, low intelligibility</h3>
+    <p>Illustrative concourse: V&nbsp;=&nbsp;20,000&nbsp;m&sup3;, S&nbsp;=&nbsp;6,000&nbsp;m&sup2;,
+    &alpha;&nbsp;=&nbsp;0.15 &rarr; room constant 1059&nbsp;m&sup2;,
+    RT<sub>60</sub>&nbsp;=&nbsp;3.6&nbsp;s.</p>
+    <div class="eq">D<sub>c</sub> = 0.141 &radic;(Q &middot; R)   &rarr;   one aimed horn 19.0 m   &middot;   four-horn array 9.5 m</div>
+    <p>Exactly half &mdash; the &radic;4 that follows from the DI given away in &sect;02. Beyond
+    D<sub>c</sub> the reverberant field dominates: SPL stops falling while the direct-to-reverberant
+    ratio keeps degrading. Peutz articulation loss,
+    %AL<sub>cons</sub>&nbsp;&asymp;&nbsp;200&nbsp;r&sup2;RT&sup2;/(V&middot;Q), capped at
+    9&middot;RT<sub>60</sub> beyond 3.16&nbsp;D<sub>c</sub>:</p>
+    <figure class="scroll">
+      <table>
+        <caption>Articulation loss, identical hardware and power &mdash; only Q differs</caption>
+        <thead><tr><th>Listener distance</th><th>One aimed horn (Q = 17.2)</th><th>Four-horn array (Q = 4.30)</th></tr></thead>
+        <tbody>
+          <tr><td>10 m</td><td class="g">0.7% &mdash; excellent</td><td class="g">3.0% &mdash; good</td></tr>
+          <tr class="hl"><td>30 m</td><td class="g">6.7% &mdash; acceptable</td><td>26.8% &mdash; unusable</td></tr>
+          <tr><td>60 m</td><td class="f">26.8% &mdash; unusable</td><td class="f">32.2% &mdash; RT-limited</td></tr>
+        </tbody>
+      </table>
+      <figcaption>Scale: &lt;5% excellent, 5&ndash;10% good, 10&ndash;15% poor, &gt;15% unacceptable
+      for emergency speech. At 30 m, <b>6.7% versus 26.8%</b> &mdash; same drivers, same amplifier,
+      same distance. The only difference is directivity.</figcaption>
+    </figure>
+    <div class="key warn"><p class="eyebrow">The saturation trap</p>
+      <p>Beyond 3.16 D<sub>c</sub>, articulation loss depends only on RT<sub>60</sub> &mdash; not on
+      distance, not on Q, not on level. Turning the amplifier up raises the direct and reverberant
+      fields equally, leaving D/R unchanged. More power just makes the unintelligible louder.</p></div>
+    <p>And a final pathology: reverberation is diffuse, so it <em>fills the seam</em> on the meter.
+    Measured SPL at the 45&deg; position looks almost normal, while the missing direct
+    high-frequency energy has been replaced by time-smeared reverberant energy &mdash; worse than
+    silence in that band. The measurement improves as the listening gets worse.</p>
+  </div>
+</section>
+
+<!-- ============ 6 ============ -->
+<section class="stage">
+  <div class="num">06<span>DIAGNOSIS</span></div>
+  <div class="body">
+    <h2>Ranking the causes</h2>
+    <p>Theory says: four horns &rarr; four directions &rarr; 360&deg; coverage &rarr; high output.
+    Reality runs: power split four ways (&minus;6&nbsp;dB) &rarr; DI quartered &rarr; beamwidth
+    narrows with frequency, so 90&deg; spacing under-covers above ~1.5&nbsp;kHz &rarr; spectral
+    seams every 90&deg; &rarr; lobing in the overlaps &rarr; a quarter of the power into every
+    surface &rarr; critical distance halved &rarr; high SPL, collapsed articulation.</p>
+    <figure class="scroll">
+      <table>
+        <caption>Candidate limitations, by magnitude</caption>
+        <thead><tr><th>Candidate</th><th>Magnitude</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr><td>Insufficient acoustic power</td><td>&minus;6 dB</td><td class="q"><b>Not primary.</b> A mis-accounting, not a shortage. Answerable with more amplifier.</td></tr>
+          <tr class="hl"><td>Poor beam coverage / non-uniformity</td><td>&minus;27 dB at 4 kHz</td><td class="q"><b>Primary.</b> Largest number here, frequency-selective in the consonant band, invisible to SPL. Not answerable with power.</td></tr>
+          <tr><td>Overlap / interference</td><td>3&ndash;6 dB, localised</td><td class="q"><b>Secondary.</b> Genuine and distance-stable, but an order of magnitude smaller and confined to the overlaps.</td></tr>
+          <tr class="hl"><td>Reflections / reverberation</td><td>D<sub>c</sub> halved; 6.7% &rarr; 26.8%</td><td class="q"><b>Co-primary</b> in enclosed or built-up sites. Caused <em>by</em> the loss of Q &mdash; and it saturates.</td></tr>
+          <tr><td>Horn efficiency</td><td>~7%; halving costs 3 dB</td><td class="q"><b>Not a limitation.</b> Efficiency is the horn&rsquo;s asset.</td></tr>
+        </tbody>
+      </table>
+    </figure>
+    <div class="key"><p class="eyebrow">Root cause</p>
+      <p>Coverage non-uniformity driven by the frequency-dependence of horn directivity, with
+      reverberation as its amplifier in real rooms. Both descend from one act: splaying the horns
+      spends the array&rsquo;s directivity on angular coverage. That single decision produces the
+      seams <em>and</em> the reverberation vulnerability.</p></div>
+    <p>Note which two candidates the intuitive analysis worries about &mdash; power and efficiency.
+    They are the two that finish last. That is why this failure is almost always misdiagnosed.</p>
+  </div>
+</section>
+
+<!-- ============ 7 ============ -->
+<section class="stage">
+  <div class="num">07<span>QUANTIFIED</span></div>
+  <div class="body">
+    <h2>The worked example</h2>
+    <div class="caveat"><strong>All figures illustrative.</strong> Four horns at 90&deg;;
+    110&nbsp;dB/W/m; 100&nbsp;W split to 25&nbsp;W each &rarr; 124.0&nbsp;dB on axis at 1&nbsp;m;
+    &minus;6&nbsp;dB beamwidths 100&deg;/90&deg;/60&deg;/40&deg; at 0.5/1/2/4&nbsp;kHz; mouth radius
+    0.2&nbsp;m; mounted 4&nbsp;m, ear 1.6&nbsp;m; polar model
+    L(&theta;)&nbsp;=&nbsp;&minus;6(&theta;/&theta;<sub>6dB</sub>)&sup2;, main lobe only;
+    incoherent summation; free field.<br><br>
+    <strong>Model limits, stated plainly.</strong> The polar models no sidelobes, rear radiation or
+    cabinet diffraction, so it <em>overstates</em> the 4&nbsp;kHz seam depth &mdash; a real horn
+    would fill it partially, and 12&ndash;20&nbsp;dB is the realistic figure. Incoherent summation is
+    right for a band-average but ignores &sect;04&rsquo;s coherent structure.
+    <strong>The direction and order of magnitude of every conclusion is robust; the individual
+    decibel values are not measurements.</strong></div>
+
+    <figure>
+      <div class="scroll"><svg id="chart" viewBox="-46 -48 812 346" role="img"
+        aria-label="Relative level versus azimuth: broadband curve nearly flat while the 4 kHz octave scallops 27 dB every 90 degrees"></svg></div>
+      <figcaption><b>The diagnostic signature.</b> Relative level around the full circle. The
+      broadband curve (teal) is nearly flat &mdash; 4 dB of ripple, which passes. Under it, the
+      4 kHz octave (rust) scallops 27 dB at every seam. <b>A flat broadband curve over a deeply
+      scalloped high-frequency curve is the fingerprint of this failure mode.</b></figcaption>
+    </figure>
+
+    <figure class="scroll">
+      <table>
+        <caption>SPL vs. distance and azimuth, free field</caption>
+        <thead><tr><th>Distance</th><th>On axis</th><th>22.5&deg;</th><th>45&deg; seam</th><th>45&deg; seam, 4 kHz oct.</th></tr></thead>
+        <tbody>
+          <tr><td>1 m</td><td>124.0</td><td>122.0</td><td>119.9</td><td class="f">87.8</td></tr>
+          <tr><td>5 m</td><td>110.0</td><td>108.1</td><td>105.9</td><td class="f">73.8</td></tr>
+          <tr><td>10 m</td><td>104.0</td><td>102.0</td><td>99.9</td><td class="f">67.8</td></tr>
+          <tr><td>20 m</td><td>98.0</td><td>96.0</td><td>93.9</td><td class="f">61.7</td></tr>
+          <tr class="hl"><td>30 m</td><td>94.5</td><td>92.5</td><td>90.4</td><td>58.2</td></tr>
+          <tr><td>50 m</td><td>90.0</td><td>88.1</td><td>85.9</td><td class="f">53.8</td></tr>
+          <tr><td>100 m</td><td>84.0</td><td>82.0</td><td>79.9</td><td class="f">47.8</td></tr>
+        </tbody>
+      </table>
+      <figcaption>The broadband columns look benign at every distance: a 4 dB spread around the
+      circle, which would pass most specifications. The last column is where the system
+      fails.</figcaption>
+    </figure>
+
+    <figure class="scroll">
+      <table>
+        <caption>Per-band signal-to-noise at 30 m, 65 dB(A) urban ambient</caption>
+        <thead><tr><th>Band</th><th>On-axis SPL</th><th>On-axis SNR</th><th>Seam SPL</th><th>Seam SNR</th><th>SNR lost</th></tr></thead>
+        <tbody>
+          <tr><td>500 Hz</td><td>89.3</td><td>+31</td><td>87.4</td><td class="g">+29</td><td>2 dB</td></tr>
+          <tr><td>1 kHz</td><td>90.0</td><td>+34</td><td>87.0</td><td class="g">+31</td><td>3 dB</td></tr>
+          <tr><td>2 kHz</td><td>87.9</td><td>+35</td><td>77.4</td><td class="m">+24</td><td class="m">11 dB</td></tr>
+          <tr class="hl"><td>4 kHz</td><td>85.6</td><td>+38</td><td>58.2</td><td>+10</td><td>28 dB</td></tr>
+        </tbody>
+      </table>
+      <figcaption>On axis, every band has 30+ dB of headroom and a balanced spectrum. At the seam
+      the low bands are untouched while 4 kHz loses <b>28 dB of margin</b>. The listener has plenty
+      of level and no consonants.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ============ 8 ============ -->
+<section class="stage">
+  <div class="num">08<span>CONCLUSION</span></div>
+  <div class="body">
+    <h2>Why it underperforms its own configuration</h2>
+    <div class="key"><p class="eyebrow">The answer</p>
+      <p>Splaying four horns spends the horns&rsquo; only real asset &mdash; directivity &mdash; on
+      angular coverage, then delivers that coverage non-uniformly across frequency, in an
+      environment that punishes the lost directivity a second time.</p></div>
+    <p><b>1. No extra level anywhere.</b> With a fixed amplifier, four directions cost
+    10&nbsp;log<sub>10</sub>(4)&nbsp;=&nbsp;6&nbsp;dB in every one of them, because pressure at a
+    point is set by the one or two horns aimed at it, not by total radiated power.</p>
+    <p><b>2. The coverage under-delivers where speech lives.</b> 90&deg; spacing needs
+    &ge;&nbsp;90&deg; beamwidth; real horns give that at 1&nbsp;kHz and about 40&deg; at 4&nbsp;kHz.
+    The seams are therefore low-pass filters, not level dips.</p>
+    <p><b>3. The dominant failure is invisible to the dominant measurement.</b> A broadband or
+    A-weighted survey reports a few decibels of ripple and passes the system. Only band-resolved
+    SPL or STI/STIPA reveals it. Hence &ldquo;muffled in places&rdquo;, treated as a power problem,
+    forever.</p>
+    <p><b>4. Reverberation converts the sacrificed directivity into an intelligibility failure,
+    then saturates.</b> Quartering Q halves D<sub>c</sub>; %AL<sub>cons</sub> at 30&nbsp;m goes
+    6.7%&nbsp;&rarr;&nbsp;26.8% on identical hardware; and beyond 3.16&nbsp;D<sub>c</sub> no amount
+    of amplifier power can improve intelligibility at all.</p>
+    <p>Inter-horn interference and horn efficiency are real but secondary &mdash; and they are
+    exactly what the intuitive analysis worries about.</p>
+
+    <h3 style="margin-top:26px">Design changes, ranked by benefit per unit of effort</h3>
+
+    <div class="tier">
+      <p class="eyebrow">Tier 1 &middot; addresses the root cause</p>
+      <p class="t">Largest available improvement. Everything else is refinement.</p>
+      <ol class="fixes">
+        <li><b>Match beamwidth to spacing at the highest frequency that matters, not the lowest.</b>
+          <span>Specify constant-directivity horns holding a nominal 90&deg; pattern to 6&ndash;8 kHz,
+          or raise the horn count to match the <em>high-frequency</em> beamwidth &mdash; six at 60&deg;,
+          about nine at 40&deg;. Recovers the entire 10&ndash;27 dB deficit.</span></li>
+        <li><b>Question whether 360&deg; is actually required.</b>
+          <span>It usually is not: some sectors face water, fields, a hillside. Serving 180&deg; with
+          two horns instead of 360&deg; with four returns +3 dB of level and +3 dB of DI for free,
+          halves the seams, and stops radiating into two reflective quadrants. The cheapest gain in
+          the system.</span></li>
+        <li><b>Split by frequency band instead of by mechanical splay.</b>
+          <span>Below ~600&ndash;800 Hz the horns are omnidirectional and interfering to no purpose.
+          Build one low-frequency section at full power crossed over at 0.8&ndash;1.2 kHz to
+          pattern-controlled HF devices.</span></li>
+      </ol>
+    </div>
+
+    <div class="tier">
+      <p class="eyebrow">Tier 2 &middot; significant, moderate cost</p>
+      <ol class="fixes c2">
+        <li><b>Individual amplification and per-horn DSP.</b>
+          <span>Removes the 2 &Omega; parallel-load problem, and allows per-sector level shading for
+          different throws, per-sector HF shelving, and muting of unused directions.</span></li>
+        <li><b>Crossover and EQ aimed at the speech band.</b>
+          <span>Band-limit to ~250 Hz&ndash;5 kHz; a 3&ndash;6 dB presence lift at 2&ndash;4 kHz buys
+          consonants directly. In noisy or reverberant sites this buys more STI than another 3 dB of
+          raw SPL &mdash; and unlike raw SPL it still works past D<sub>c</sub>.</span></li>
+        <li><b>Orientation and geometry.</b>
+          <span>Down-tilt 10&ndash;20&deg; so the main lobe meets the listener plane instead of
+          overshooting into facades; align all four horns to a common acoustic origin, the one change
+          that genuinely reduces overlap-zone lobing.</span></li>
+      </ol>
+    </div>
+
+    <div class="tier">
+      <p class="eyebrow">Tier 3 &middot; limited for a compact array</p>
+      <ol class="fixes c3">
+        <li><b>Delay / phase optimisation.</b>
+          <span>With all mouths inside a ~0.3 m circle, delay can shift the interference structure but
+          cannot create high-frequency energy no horn is radiating in that direction. A seam from
+          insufficient beamwidth is not a phase problem.</span></li>
+        <li><b>Sequential sector firing.</b>
+          <span>Round-robin at full power gives +6 dB per sector with zero interference &mdash;
+          genuinely useful for sirens and tone alerts, but it fragments live speech.</span></li>
+      </ol>
+    </div>
+
+    <div class="tier">
+      <p class="eyebrow">Tier 4 &middot; replace the architecture</p>
+      <p class="t">If the requirement is genuinely uniform 360&deg; speech coverage, splayed horns are
+      the wrong tool.</p>
+      <ol class="fixes c4">
+        <li><b>Vertical line array / column.</b>
+          <span>Omnidirectional in azimuth &mdash; no seams and no horizontal inter-source
+          interference at all &mdash; while concentrating directivity in the <em>vertical</em> plane.
+          This is the architecturally correct answer: it puts Q where it is useful, suppressing ground
+          and ceiling reflections and raising D<sub>c</sub>, while serving the listener plane
+          uniformly. Solves &sect;03, &sect;04 and &sect;05 at once.</span></li>
+        <li><b>Toroidal / radial &ldquo;donut&rdquo; horn.</b>
+          <span>One driver into a circumferential 360&deg; flare: seamless, single coherent source.
+          Vertical Q is limited, but a large improvement on four splayed horns.</span></li>
+        <li><b>Distributed system.</b>
+          <span>Several lower-power units near their listeners. Halving distance is worth 6 dB, and
+          decisively, every listener sits nearer <em>some</em> source than the reverberant field, so
+          D/R improves everywhere at once. In reverberant or built-up sites this beats any
+          single-point architecture, including a perfect one.</span></li>
+        <li><b>Steerable beam-forming column.</b>
+          <span>For difficult indoor sites, aiming the vertical beam at the audience plane and away
+          from hard surfaces electronically.</span></li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ============ verify ============ -->
+<section class="stage">
+  <div class="num">09<span>VERIFY</span></div>
+  <div class="body">
+    <h2>Replacing estimates with data</h2>
+    <figure class="scroll">
+      <table>
+        <caption>Measurement plan</caption>
+        <thead><tr><th>Quantity</th><th>Method</th></tr></thead>
+        <tbody>
+          <tr><td>Real horn polars</td><td class="q">Manufacturer ⅓-octave polar data, or anechoic / ground-plane measurement per IEC 60268-5. Look specifically at <b>2&ndash;8 kHz</b> &mdash; where the design lives or dies.</td></tr>
+          <tr><td>Coverage uniformity</td><td class="q">Octave-band SPL at listener height every 15&deg; around the full circle, at 2&ndash;3 distances. <b>Band-resolved, not broadband</b> &mdash; broadband will not show the defect.</td></tr>
+          <tr><td>Intelligibility</td><td class="q">STIPA per IEC 60268-16 at on-axis, 22.5&deg; and 45&deg; seam positions. Voice-alarm duty (ISO 7240-19 / EN 54-16) requires STI &ge; 0.5. Expect seams to fail while broadband SPL passes.</td></tr>
+          <tr><td>D/R, C50, RT<sub>60</sub></td><td class="q">Swept-sine impulse response at representative listener positions.</td></tr>
+          <tr><td>Interference structure</td><td class="q">2&ndash;5&deg; resolution narrowband sweeps through the overlap zones at 1, 2 and 4 kHz, at two or more distances, to confirm the far-field lobing is distance-invariant.</td></tr>
+        </tbody>
+      </table>
+    </figure>
+    <div class="key warn"><p class="eyebrow">The single most diagnostic test</p>
+      <p>Measure broadband SPL and 4 kHz octave-band SPL at the same positions around the circle,
+      and plot both. If the result is a flat broadband curve over a scalloped high-frequency curve,
+      the problem is beam coverage &mdash; and no amplifier will fix it.</p></div>
+  </div>
+</section>
+
+<footer>
+  Illustrative analysis from the stated assumption set &mdash; not measured product data.<br>
+  Standard relations used: inverse-square propagation, 10&nbsp;log<sub>10</sub>(N) power division,
+  Q&nbsp;&asymp;&nbsp;41253/(&theta;<sub>h</sub>&theta;<sub>v</sub>), &minus;6&nbsp;dB crossover,
+  D<sub>c</sub>&nbsp;=&nbsp;0.141&radic;(QR), Sabine RT<sub>60</sub>, Peutz %AL<sub>cons</sub>.<br>
+  Full write-up: <code>docs/four-horn-megaphone-analysis.md</code>
+</footer>
+</div>
+
+<script>
+(function(){
+  var BANDS=[{f:"500 Hz",bw:100,hot:false},{f:"1 kHz",bw:90,hot:false},
+             {f:"2 kHz",bw:60,hot:true},{f:"4 kHz",bw:40,hot:true}];
+  var W=[0.30,0.35,0.22,0.13], FLOOR=-30, R=100;
+  function lev(phi,bw){
+    var th=bw/2, s=0, ax=[0,90,180,270];
+    for(var i=0;i<4;i++){
+      var d=Math.abs(((phi-ax[i]+180)%360+360)%360-180);
+      s+=Math.pow(10,(-6*Math.pow(d/th,2))/10);
+    }
+    return 10*Math.log10(s);
+  }
+  function svgEl(n,a){var e=document.createElementNS("http://www.w3.org/2000/svg",n);
+    for(var k in a)e.setAttribute(k,a[k]);return e;}
+
+  /* ---- polar plots ---- */
+  var host=document.getElementById("polars");
+  BANDS.forEach(function(b){
+    var wrap=document.createElement("div"); wrap.className="polar";
+    var h=document.createElement("h4");
+    h.innerHTML='<span>'+b.f+'</span><em>'+b.bw+'&deg;</em>';
+    wrap.appendChild(h);
+    var s=svgEl("svg",{viewBox:"-116 -116 232 232",role:"img",
+      "aria-label":"Horizontal polar pattern at "+b.f});
+    [20,40,60,80].forEach(function(r){ s.appendChild(svgEl("circle",{cx:0,cy:0,r:r,"class":"grid-l"})); });
+    s.appendChild(svgEl("circle",{cx:0,cy:0,r:R,"class":"grid-l"}));
+    [0,90,180,270].forEach(function(a){
+      var t=a*Math.PI/180;
+      s.appendChild(svgEl("line",{x1:0,y1:0,x2:(R*Math.cos(t)).toFixed(1),
+        y2:(-R*Math.sin(t)).toFixed(1),"class":"axis-l"}));
+    });
+    [45,135,225,315].forEach(function(a){
+      var t=a*Math.PI/180;
+      s.appendChild(svgEl("line",{x1:0,y1:0,x2:(R*Math.cos(t)).toFixed(1),
+        y2:(-R*Math.sin(t)).toFixed(1),"class":"seam-l"}));
+    });
+    var pts=[];
+    for(var i=0;i<=360;i+=2){
+      var v=Math.max(lev(i,b.bw),FLOOR), r=R*(v-FLOOR)/(0-FLOOR), t=i*Math.PI/180;
+      pts.push((r*Math.cos(t)).toFixed(1)+","+(-r*Math.sin(t)).toFixed(1));
+    }
+    s.appendChild(svgEl("polygon",{points:pts.join(" "),"class":"pshape"+(b.hot?" hot":"")}));
+    var lb=svgEl("text",{x:4,y:-76,"class":"tick"}); lb.textContent="−6"; s.appendChild(lb);
+    var lb2=svgEl("text",{x:4,y:-16,"class":"tick"}); lb2.textContent="−24"; s.appendChild(lb2);
+    wrap.appendChild(s); host.appendChild(wrap);
+  });
+
+  /* ---- azimuth chart ---- */
+  var CW=720, CH=260, LO=-30;
+  var c=document.getElementById("chart");
+  function cy(v){ return CH*(0-Math.min(Math.max(v,LO),0))/(0-LO); }
+  function cx(a){ return CW*a/360; }
+  [0,-6,-12,-18,-24,-30].forEach(function(v){
+    c.appendChild(svgEl("line",{x1:0,y1:cy(v).toFixed(1),x2:CW,y2:cy(v).toFixed(1),"class":"grid-l"}));
+    var t=svgEl("text",{x:-9,y:(cy(v)+3.5).toFixed(1),"class":"tick","text-anchor":"end"});
+    t.textContent=(v===0?"0":"−"+Math.abs(v))+" dB"; c.appendChild(t);
+  });
+  [45,135,225,315].forEach(function(a){
+    c.appendChild(svgEl("line",{x1:cx(a).toFixed(1),y1:0,x2:cx(a).toFixed(1),y2:CH,"class":"seam-l"}));
+  });
+  [0,90,180,270,360].forEach(function(a){
+    c.appendChild(svgEl("line",{x1:cx(a).toFixed(1),y1:0,x2:cx(a).toFixed(1),y2:CH,"class":"axis-l"}));
+  });
+  [0,45,90,135,180,225,270,315,360].forEach(function(a){
+    var t=svgEl("text",{x:cx(a).toFixed(1),y:CH+18,"class":"tick","text-anchor":"middle"});
+    t.textContent=a+"°"; c.appendChild(t);
+  });
+  var xl=svgEl("text",{x:(CW/2).toFixed(1),y:CH+36,"class":"tick","text-anchor":"middle"});
+  xl.textContent="AZIMUTH   ·   solid spokes: horn axes   ·   dashed: 45° seams"; c.appendChild(xl);
+  function series(fn,cls){
+    var p=[];
+    for(var i=0;i<=360;i+=2) p.push(cx(i).toFixed(1)+","+cy(fn(i)).toFixed(1));
+    var pl=svgEl("polyline",{points:p.join(" "),fill:"none","stroke-width":2.4,
+      "stroke-linejoin":"round"});
+    pl.setAttribute("stroke","var("+cls+")"); c.appendChild(pl);
+  }
+  series(function(i){
+    var f=[500,1000,2000,4000], bw=[100,90,60,40], s=0;
+    for(var k=0;k<4;k++) s+=W[k]*Math.pow(10,lev(i,bw[k])/10);
+    return 10*Math.log10(s);
+  },"--accent");
+  series(function(i){ return lev(i,40); },"--alert");
+  function legend(x,cls,txt){
+    var ln=svgEl("line",{x1:x,y1:-26,x2:x+20,y2:-26,"stroke-width":2.4});
+    ln.setAttribute("stroke","var("+cls+")"); c.appendChild(ln);
+    var t=svgEl("text",{x:x+27,y:-22.5});
+    t.setAttribute("style","font-family:var(--mono);font-size:10.5px;font-weight:600;"+
+      "letter-spacing:.04em;fill:var("+cls+")");
+    t.textContent=txt; c.appendChild(t);
+  }
+  legend(0,"--accent","BROADBAND, SPEECH-WEIGHTED  ·  4 dB RIPPLE");
+  legend(330,"--alert","4 kHz OCTAVE  ·  27 dB SCALLOP");
+})();
+</script>
